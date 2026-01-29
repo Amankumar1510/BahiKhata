@@ -10,6 +10,11 @@ from app.services.ai.tools import get_ai_tools
 from app.services.ai.prompts import SYSTEM_PROMPT
 from datetime import date
 import operator
+import logging
+
+# Configure logging for AI engine debugging
+logger = logging.getLogger("ai.engine")
+logger.setLevel(logging.DEBUG)
 
 # 1. Define the Agent State
 class AgentState(TypedDict):
@@ -57,30 +62,45 @@ class LedgerEngine:
         messages = state["messages"]
         last_message = messages[-1]
         if not last_message.tool_calls:
+            logger.info("🔀 [_should_continue] No tool calls -> END")
             return "end"
+        logger.info(f"🔀 [_should_continue] Tool calls detected: {[tc['name'] for tc in last_message.tool_calls]} -> CONTINUE")
         return "continue"
 
     def _create_call_model(self, llm_with_tools):
         """Create a model caller with the bound tools."""
         def call_model(state):
             messages = state["messages"]
+            logger.info(f"🤖 [call_model] Invoking LLM with {len(messages)} messages")
+            logger.debug(f"🤖 [call_model] Last message type: {type(messages[-1]).__name__}")
             response = llm_with_tools.invoke(messages)
+            logger.info(f"🤖 [call_model] LLM Response type: {type(response).__name__}")
+            if hasattr(response, 'tool_calls') and response.tool_calls:
+                logger.info(f"🤖 [call_model] LLM wants to call tools: {[tc['name'] for tc in response.tool_calls]}")
+            else:
+                logger.info(f"🤖 [call_model] LLM final response: {response.content[:100]}...")
             return {"messages": [response]}
         return call_model
 
     async def run_command(self, text: str, auth_data: Dict[str, Any]):
         """The main entry point for the API to call."""
+        logger.info(f"🚀 [run_command] ===== NEW REQUEST =====")
+        logger.info(f"🚀 [run_command] User input: {text}")
+        
         # Extract user info from auth_data
         user = auth_data["user"]
         token = auth_data["token"]
+        logger.debug(f"🚀 [run_command] User ID: {user.id}")
         
         # Build tools with auth context for this request
         tools = get_ai_tools(auth_data)
+        logger.info(f"🚀 [run_command] Tools bound: {[t.name for t in tools]}")
         llm_with_tools = self.llm.bind_tools(tools)
         graph = self._build_graph(llm_with_tools, tools)
         
         # Format system prompt with current date
         formatted_prompt = SYSTEM_PROMPT.format(current_date=date.today().isoformat())
+        logger.debug(f"🚀 [run_command] System prompt formatted with date: {date.today().isoformat()}")
         
         initial_state = {
             "messages": [
@@ -91,5 +111,11 @@ class LedgerEngine:
             "token": token
         }
         
+        logger.info("🚀 [run_command] Starting LangGraph execution...")
         final_state = await graph.ainvoke(initial_state)
-        return final_state["messages"][-1].content
+        
+        final_response = final_state["messages"][-1].content
+        logger.info(f"🚀 [run_command] ===== REQUEST COMPLETE =====")
+        logger.info(f"🚀 [run_command] Final response: {final_response[:200]}...")
+        
+        return final_response

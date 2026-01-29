@@ -28,7 +28,7 @@ async def get_party_id_by_name(supabase, owner_id: str, name: str):
         response = supabase.table("parties") \
             .select("id") \
             .eq("owner_id", owner_id) \
-            .or_(f"name.ilike.{name},aliases.cs.{{ {name} }}") \
+            .or_(f"name.ilike.%{name}%,aliases.cs.{{{name}}}") \
             .limit(1) \
             .execute()
         

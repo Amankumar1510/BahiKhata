@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     SUPABASE_ANON_KEY: str
     SUPABASE_SERVICE_ROLE_KEY: str = ""  # Optional
     GROQ_API_KEY: str
-    LLM_MODEL: str = "llama-3.1-70b-versatile" # 70B is better for reasoning
+    LLM_MODEL: str = "llama-3.3-70b-versatile" # 70B is better for reasoning
     
     # App
     APP_NAME: str = "SmartLedger AI"
