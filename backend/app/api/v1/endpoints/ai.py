@@ -21,14 +21,15 @@ async def process_ai_command(
     
     try:
         # Run the LangGraph workflow
-        response = await ai_engine.run_command(
+        result = await ai_engine.run_command(
             text=text, 
             auth_data=auth_data
         )
         
         return {
             "status": "success",
-            "response": response
+            "response": result["answer"],
+            "trace": result["trace"]
         }
     except Exception as e:
         raise HTTPException(

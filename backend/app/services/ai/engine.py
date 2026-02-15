@@ -118,4 +118,34 @@ class LedgerEngine:
         logger.info(f"🚀 [run_command] ===== REQUEST COMPLETE =====")
         logger.info(f"🚀 [run_command] Final response: {final_response[:200]}...")
         
-        return final_response
+        # Build execution trace
+        trace = []
+        messages = final_state["messages"]
+        
+        for i, msg in enumerate(messages):
+            # Check for tool calls (AI requests)
+            if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    trace_item = {
+                        "type": "tool_call",
+                        "tool": tc["name"],
+                        "args": tc["args"],
+                        "id": tc["id"]
+                    }
+                    trace.append(trace_item)
+            
+            # Check for tool outputs (Function results)
+            if hasattr(msg, 'tool_call_id'):
+                # Find the matching tool call in the trace to link them (optional, but good for UI)
+                trace_item = {
+                    "type": "tool_result",
+                    "tool": msg.name, # LangGraph usually populates this
+                    "result": msg.content,
+                    "id": msg.tool_call_id
+                }
+                trace.append(trace_item)
+        
+        return {
+            "answer": final_response,
+            "trace": trace
+        }

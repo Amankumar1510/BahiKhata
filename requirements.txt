@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic-settings
+supabase
+email-validator
+langchain-community
+langchain-groq
+langchain-core
+langgraph
+langchain-text-embedding-ada-002
