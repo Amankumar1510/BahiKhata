@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BahiKhata — SmartLedger AI</title>
+  <meta name="description" content="Manage your shop ledger with AI assistance. Track customers, suppliers, and transactions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── TOAST CONTAINER ── -->
+<div id="toast-container"></div>
+
+<!-- ── CONFIRM DIALOG ── -->
+<div id="confirm-dialog" class="confirm-dialog hidden">
+  <div class="confirm-box">
+    <h4 id="confirm-title">Are you sure?</h4>
+    <p id="confirm-msg">This action cannot be undone.</p>
+    <div class="btns">
+      <button class="btn btn-secondary" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     AUTH SCREEN
+══════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>📒 BahiKhata</h1>
+    <p class="subtitle">SmartLedger AI — manage your khata</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- Login Panel -->
+    <div class="auth-panel active" id="panel-login">
+      <div class="form-group">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()">Login</button>
+    </div>
+
+    <!-- Signup Panel -->
+    <div class="auth-panel" id="panel-signup">
+      <div class="form-group">
+        <label for="signup-name">Full Name</label>
+        <input type="text" id="signup-name" placeholder="Ram Kumar" />
+      </div>
+      <div class="form-group">
+        <label for="signup-email">Email</label>
+        <input type="email" id="signup-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label for="signup-password">Password</label>
+        <input type="password" id="signup-password" placeholder="min 6 characters" />
+      </div>
+      <button class="btn btn-primary btn-full" id="signup-btn" onclick="doSignup()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP SCREEN
+══════════════════════════════════════ -->
+<div id="app-screen">
+
+  <!-- Top Nav -->
+  <nav id="top-nav">
+    <div class="brand">📒 <span>BahiKhata</span></div>
+    <div class="spacer"></div>
+    <span class="user-info" id="user-email"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="nav-item active" id="nav-parties" onclick="navigateTo('parties')">
+      <span class="nav-icon">👥</span> Parties
+    </div>
+    <div class="nav-item" id="nav-ai" onclick="navigateTo('ai')">
+      <span class="nav-icon">🤖</span> AI Assistant
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main id="main-content">
+
+    <!-- ─────────────────────────────────
+         PARTIES VIEW
+    ───────────────────────────────── -->
+    <div class="view active" id="parties-view">
+      <div class="page-header">
+        <div>
+          <h2>Parties</h2>
+          <div class="sub">Customers &amp; Suppliers</div>
+        </div>
+        <button class="btn btn-primary" onclick="openPartyModal()">+ Add Party</button>
+      </div>
+
+      <div class="table-wrap">
+        <table id="parties-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Phone</th>
+              <th>Aliases</th>
+              <th>Balance (₹)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="parties-tbody">
+            <tr class="loading-row"><td colspan="6">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────
+         LEDGER VIEW
+    ───────────────────────────────── -->
+    <div class="view" id="ledger-view">
+      <div class="back-link" onclick="navigateTo('parties')">← Back to Parties</div>
+      <div class="page-header">
+        <div>
+          <h2 id="ledger-party-name">—</h2>
+          <div class="sub" id="ledger-party-type"></div>
+        </div>
+        <button class="btn btn-primary" onclick="openTxnModal()">+ Add Entry</button>
+      </div>
+
+      <div class="balance-card" id="balance-card">
+        <span class="label">Current Balance:</span>
+        <span class="amount" id="balance-amount">₹0</span>
+      </div>
+
+      <div class="table-wrap">
+        <table id="ledger-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Qty</th>
+              <th>Rate</th>
+              <th>Amount (₹)</th>
+              <th>Mode</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-tbody">
+            <tr class="loading-row"><td colspan="8">Select a party to view ledger</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────
+         AI ASSISTANT VIEW
+    ───────────────────────────────── -->
+    <div class="view" id="ai-view">
+      <div class="page-header">
+        <div>
+          <h2>AI Assistant</h2>
+          <div class="sub">Type commands in English, Hindi, or Hinglish</div>
+        </div>
+      </div>
+
+      <div class="ai-input-row">
+        <input type="text" id="ai-input" placeholder='Try: "Show balance of Raju" or "Akku ko 500 diya"' />
+        <button class="btn btn-primary" id="ai-send-btn" onclick="sendAiCommand()">Send</button>
+      </div>
+
+      <div class="ai-chips">
+        <div class="ai-chip" onclick="setAiInput('Show me all recent transactions')">Show recent transactions</div>
+        <div class="ai-chip" onclick="setAiInput('Add Raju as a new customer')">Add new customer</div>
+        <div class="ai-chip" onclick="setAiInput('Given 10 kg chicken to Akku at 200 rate')">Record GIVE entry</div>
+        <div class="ai-chip" onclick="setAiInput('Raju ne 500 rupaye diye')">Record GOT payment</div>
+        <div class="ai-chip" onclick="setAiInput('What is the balance of Akku?')">Check balance</div>
+        <div class="ai-chip" onclick="setAiInput('Show history for Akku')">Show ledger history</div>
+      </div>
+
+      <div class="ai-response-area hidden" id="ai-response-area">
+        <div class="ai-response-body" id="ai-response-body"></div>
+        <div class="trace-toggle" onclick="toggleTrace()" id="trace-toggle">
+          <span>🔍 Execution Trace (<span id="trace-count">0</span> steps)</span>
+          <span id="trace-arrow">▼</span>
+        </div>
+        <div class="trace-content" id="trace-content"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- Party Modal -->
+<div class="modal-backdrop hidden" id="party-modal-backdrop" onclick="closePartyModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="party-modal-title">Add Party</h3>
+    <div class="form-group">
+      <label for="pm-name">Name *</label>
+      <input type="text" id="pm-name" placeholder="e.g. Raju" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="pm-type">Type *</label>
+        <select id="pm-type">
+          <option value="CUSTOMER">Customer</option>
+          <option value="SUPPLIER">Supplier</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="pm-phone">Phone</label>
+        <input type="tel" id="pm-phone" placeholder="9876543210" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="pm-aliases">Aliases <span style="font-weight:400;color:var(--text-muted)">(comma separated)</span></label>
+      <input type="text" id="pm-aliases" placeholder="e.g. Rajju, Bhai" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePartyModal()">Cancel</button>
+      <button class="btn btn-primary" id="party-modal-save-btn" onclick="saveParty()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction Modal -->
+<div class="modal-backdrop hidden" id="txn-modal-backdrop" onclick="closeTxnModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="txn-modal-title">Add Ledger Entry</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="tm-type">Type *</label>
+        <select id="tm-type">
+          <option value="GIVE">GIVE (you gave / sold)</option>
+          <option value="GOT">GOT (you received)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="tm-mode">Payment Mode</label>
+        <select id="tm-mode">
+          <option value="NONE">None / Credit</option>
+          <option value="CASH">Cash</option>
+          <option value="UPI">UPI</option>
+          <option value="NEFT">NEFT</option>
+          <option value="CHEQUE">Cheque</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="tm-qty">Quantity</label>
+        <input type="number" id="tm-qty" value="1" min="0" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label for="tm-rate">Rate per Unit (₹)</label>
+        <input type="number" id="tm-rate" value="0" min="0" step="0.01" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="tm-unit">Unit</label>
+        <select id="tm-unit">
+          <option value="kg">kg</option>
+          <option value="g">g</option>
+          <option value="units">units</option>
+          <option value="pcs">pcs</option>
+          <option value="litre">litre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="tm-date">Date *</label>
+        <input type="date" id="tm-date" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="tm-desc">Description</label>
+      <input type="text" id="tm-desc" placeholder="Optional note" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeTxnModal()">Cancel</button>
+      <button class="btn btn-primary" id="txn-modal-save-btn" onclick="saveTxn()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
