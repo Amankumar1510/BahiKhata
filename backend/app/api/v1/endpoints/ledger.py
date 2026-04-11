@@ -40,7 +40,7 @@ async def add_ledger_entry(
 # IMPORTANT: This must come BEFORE /{party_id} to avoid route conflict
 @router.get("/history", response_model=List[TransactionResponse])
 async def get_ledger_by_name(
-    name: str, 
+    name: str,
     auth_data = Depends(get_current_user)
 ):
     """Fetch history using the Party Name instead of UUID."""

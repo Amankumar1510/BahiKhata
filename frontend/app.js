@@ -17,6 +17,7 @@ const state = {
   currentParty: null,        // Party object being viewed in ledger
   editingPartyId: null,      // For party modal edit mode
   editingTxnId: null,        // For txn modal edit mode
+  ledgerTransactions: [],    // All transactions for current party (for local filter)
 };
 
 // ─────────────────────────────────────────
@@ -25,10 +26,10 @@ const state = {
 document.addEventListener('DOMContentLoaded', () => {
   // Restore session
   const savedToken = localStorage.getItem('bk_token');
-  const savedUser  = localStorage.getItem('bk_user');
+  const savedUser = localStorage.getItem('bk_user');
   if (savedToken && savedUser) {
     state.token = savedToken;
-    state.user  = JSON.parse(savedUser);
+    state.user = JSON.parse(savedUser);
     showApp();
   } else {
     showAuth();
@@ -114,10 +115,10 @@ function showConfirm(title, msg) {
       resolve(result);
     };
 
-    const okBtn     = document.getElementById('confirm-ok');
+    const okBtn = document.getElementById('confirm-ok');
     const cancelBtn = document.getElementById('confirm-cancel');
 
-    document.getElementById('confirm-ok').addEventListener('click', () => cleanup(true),   { once: true });
+    document.getElementById('confirm-ok').addEventListener('click', () => cleanup(true), { once: true });
     document.getElementById('confirm-cancel').addEventListener('click', () => cleanup(false), { once: true });
   });
 }
@@ -145,7 +146,7 @@ async function apiFetch(path, options = {}) {
     try {
       const err = await res.json();
       detail = err.detail || detail;
-    } catch (_) {}
+    } catch (_) { }
     throw new Error(detail);
   }
 
@@ -178,7 +179,7 @@ function showApp() {
 }
 
 async function doLogin() {
-  const email    = document.getElementById('login-email').value.trim();
+  const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
 
   if (!email || !password) { toast('Please fill in all fields', 'error'); return; }
@@ -191,9 +192,9 @@ async function doLogin() {
     });
 
     state.token = data.access_token;
-    state.user  = data.user;
+    state.user = data.user;
     localStorage.setItem('bk_token', state.token);
-    localStorage.setItem('bk_user',  JSON.stringify(state.user));
+    localStorage.setItem('bk_user', JSON.stringify(state.user));
     toast('Logged in successfully', 'success');
     showApp();
   } catch (e) {
@@ -205,11 +206,11 @@ async function doLogin() {
 
 async function doSignup() {
   const full_name = document.getElementById('signup-name').value.trim();
-  const email     = document.getElementById('signup-email').value.trim();
-  const password  = document.getElementById('signup-password').value;
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
 
   if (!full_name || !email || !password) { toast('Please fill in all fields', 'error'); return; }
-  if (password.length < 6)              { toast('Password must be at least 6 characters', 'error'); return; }
+  if (password.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
 
   setLoading('signup-btn', true, 'Create Account');
   try {
@@ -226,9 +227,9 @@ async function doSignup() {
     }
 
     state.token = data.access_token;
-    state.user  = data.user;
+    state.user = data.user;
     localStorage.setItem('bk_token', state.token);
-    localStorage.setItem('bk_user',  JSON.stringify(state.user));
+    localStorage.setItem('bk_user', JSON.stringify(state.user));
     toast('Account created!', 'success');
     showApp();
   } catch (e) {
@@ -241,9 +242,9 @@ async function doSignup() {
 async function doLogout() {
   try {
     await apiFetch('/auth/logout', { method: 'POST' });
-  } catch (_) {}
+  } catch (_) { }
   state.token = null;
-  state.user  = null;
+  state.user = null;
   localStorage.removeItem('bk_token');
   localStorage.removeItem('bk_user');
   showAuth();
@@ -310,8 +311,8 @@ function renderPartiesTable() {
       : `<span class="pill pill-supplier">Supplier</span>`;
 
     const aliases = (p.aliases || []).join(', ') || '—';
-    const balCls  = balanceCls(p.current_balance);
-    const bal     = fmtAmount(p.current_balance);
+    const balCls = balanceCls(p.current_balance);
+    const bal = fmtAmount(p.current_balance);
 
     return `<tr>
       <td>
@@ -338,19 +339,19 @@ function openPartyModal(partyId = null) {
   const title = document.getElementById('party-modal-title');
 
   // Clear form
-  document.getElementById('pm-name').value    = '';
-  document.getElementById('pm-phone').value   = '';
+  document.getElementById('pm-name').value = '';
+  document.getElementById('pm-phone').value = '';
   document.getElementById('pm-aliases').value = '';
-  document.getElementById('pm-type').value    = 'CUSTOMER';
+  document.getElementById('pm-type').value = 'CUSTOMER';
 
   if (partyId) {
     const party = state.parties.find(p => p.id === partyId);
     if (party) {
       title.textContent = 'Edit Party';
-      document.getElementById('pm-name').value    = party.name;
-      document.getElementById('pm-phone').value   = party.phone || '';
+      document.getElementById('pm-name').value = party.name;
+      document.getElementById('pm-phone').value = party.phone || '';
       document.getElementById('pm-aliases').value = (party.aliases || []).join(', ');
-      document.getElementById('pm-type').value    = party.party_type;
+      document.getElementById('pm-type').value = party.party_type;
     }
   } else {
     title.textContent = 'Add Party';
@@ -368,9 +369,9 @@ function closePartyModal(event) {
 }
 
 async function saveParty() {
-  const name    = document.getElementById('pm-name').value.trim();
-  const phone   = document.getElementById('pm-phone').value.trim() || null;
-  const type    = document.getElementById('pm-type').value;
+  const name = document.getElementById('pm-name').value.trim();
+  const phone = document.getElementById('pm-phone').value.trim() || null;
+  const type = document.getElementById('pm-type').value;
   const aliases = document.getElementById('pm-aliases').value
     .split(',').map(s => s.trim()).filter(Boolean);
 
@@ -434,17 +435,18 @@ async function loadLedger() {
     party.party_type === 'CUSTOMER' ? 'Customer' : 'Supplier';
 
   // Balance card
-  const bal    = parseFloat(party.current_balance) || 0;
-  const balEl  = document.getElementById('balance-amount');
-  balEl.textContent  = fmtAmount(bal);
-  balEl.className    = `amount ${balanceCls(bal)}`;
+  const bal = parseFloat(party.current_balance) || 0;
+  const balEl = document.getElementById('balance-amount');
+  balEl.textContent = fmtAmount(bal);
+  balEl.className = `amount ${balanceCls(bal)}`;
 
   const tbody = document.getElementById('ledger-tbody');
   tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spinner-dark spinner" style="margin-right:8px"></span>Loading...</td></tr>';
 
   try {
-    const txns = await apiFetch(`/ledger/${party.id}`);
-    renderLedgerTable(txns);
+    const data = await apiFetch(`/ledger/${party.id}`);
+    state.ledgerTransactions = data || [];
+    applyLedgerFilters();
   } catch (e) {
     tbody.innerHTML = `<tr class="loading-row"><td colspan="8" style="color:var(--danger)">${e.message}</td></tr>`;
   }
@@ -495,7 +497,7 @@ function openTxnModal(txnId = null, txn = null) {
   // Reset to defaults
   document.getElementById('tm-type').value = 'GIVE';
   document.getElementById('tm-mode').value = 'NONE';
-  document.getElementById('tm-qty').value  = '1';
+  document.getElementById('tm-qty').value = '1';
   document.getElementById('tm-rate').value = '0';
   document.getElementById('tm-unit').value = 'kg';
   document.getElementById('tm-date').value = todayISO();
@@ -505,7 +507,7 @@ function openTxnModal(txnId = null, txn = null) {
     title.textContent = 'Edit Entry';
     document.getElementById('tm-type').value = txn.transaction_type;
     document.getElementById('tm-mode').value = txn.payment_mode || 'NONE';
-    document.getElementById('tm-qty').value  = txn.quantity;
+    document.getElementById('tm-qty').value = txn.quantity;
     document.getElementById('tm-rate').value = txn.rate_per_unit;
     document.getElementById('tm-unit').value = txn.unit || 'kg';
     document.getElementById('tm-date').value = txn.transaction_date
@@ -529,13 +531,13 @@ async function saveTxn() {
   const party = state.currentParty;
   if (!party) return;
 
-  const type  = document.getElementById('tm-type').value;
-  const mode  = document.getElementById('tm-mode').value;
-  const qty   = parseFloat(document.getElementById('tm-qty').value)  || 0;
-  const rate  = parseFloat(document.getElementById('tm-rate').value) || 0;
-  const unit  = document.getElementById('tm-unit').value;
-  const date  = document.getElementById('tm-date').value;
-  const desc  = document.getElementById('tm-desc').value.trim() || null;
+  const type = document.getElementById('tm-type').value;
+  const mode = document.getElementById('tm-mode').value;
+  const qty = parseFloat(document.getElementById('tm-qty').value) || 0;
+  const rate = parseFloat(document.getElementById('tm-rate').value) || 0;
+  const unit = document.getElementById('tm-unit').value;
+  const date = document.getElementById('tm-date').value;
+  const desc = document.getElementById('tm-desc').value.trim() || null;
 
   if (!date) { toast('Date is required', 'error'); return; }
 
@@ -595,12 +597,37 @@ async function refreshPartyBalance(partyId) {
     if (updated) {
       state.currentParty = updated;
       // Update balance card if in ledger view
-      const bal   = parseFloat(updated.current_balance) || 0;
+      const bal = parseFloat(updated.current_balance) || 0;
       const balEl = document.getElementById('balance-amount');
       balEl.textContent = fmtAmount(bal);
-      balEl.className   = `amount ${balanceCls(bal)}`;
+      balEl.className = `amount ${balanceCls(bal)}`;
     }
-  } catch (_) {}
+  } catch (_) { }
+}
+
+function applyLedgerFilters() {
+  const start = document.getElementById('filter-start').value;
+  const end = document.getElementById('filter-end').value;
+
+  let filtered = state.ledgerTransactions;
+
+  if (start) {
+    const startDate = new Date(start + 'T00:00:00');
+    filtered = filtered.filter(t => new Date(t.transaction_date) >= startDate);
+  }
+
+  if (end) {
+    const endDate = new Date(end + 'T23:59:59');
+    filtered = filtered.filter(t => new Date(t.transaction_date) <= endDate);
+  }
+
+  renderLedgerTable(filtered);
+}
+
+function clearLedgerFilters() {
+  document.getElementById('filter-start').value = '';
+  document.getElementById('filter-end').value = '';
+  applyLedgerFilters();
 }
 
 // ─────────────────────────────────────────
@@ -615,14 +642,14 @@ async function sendAiCommand() {
   const input = document.getElementById('ai-input').value.trim();
   if (!input) { toast('Please type a command', 'error'); return; }
 
-  const sendBtn       = document.getElementById('ai-send-btn');
-  const responseArea  = document.getElementById('ai-response-area');
-  const responseBody  = document.getElementById('ai-response-body');
-  const traceContent  = document.getElementById('trace-content');
-  const traceCount    = document.getElementById('trace-count');
+  const sendBtn = document.getElementById('ai-send-btn');
+  const responseArea = document.getElementById('ai-response-area');
+  const responseBody = document.getElementById('ai-response-body');
+  const traceContent = document.getElementById('trace-content');
+  const traceCount = document.getElementById('trace-count');
 
-  sendBtn.disabled    = true;
-  sendBtn.innerHTML   = '<span class="spinner"></span>';
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<span class="spinner"></span>';
   responseArea.classList.add('hidden');
 
   try {
@@ -649,7 +676,7 @@ async function sendAiCommand() {
   } catch (e) {
     toast(e.message, 'error');
   } finally {
-    sendBtn.disabled  = false;
+    sendBtn.disabled = false;
     sendBtn.textContent = 'Send';
   }
 }
@@ -665,7 +692,7 @@ function renderTraceItem(item) {
     let resultStr = item.result;
     try {
       resultStr = JSON.stringify(JSON.parse(item.result), null, 2);
-    } catch (_) {}
+    } catch (_) { }
     return `<div class="trace-item trace-result">
       <div class="trace-label">✅ Result: ${esc(item.tool || '')}</div>
       <pre style="margin:0;font-size:11px;white-space:pre-wrap;color:#86efac">${esc(resultStr)}</pre>
@@ -676,7 +703,7 @@ function renderTraceItem(item) {
 
 function toggleTrace() {
   const content = document.getElementById('trace-content');
-  const arrow   = document.getElementById('trace-arrow');
+  const arrow = document.getElementById('trace-arrow');
   content.classList.toggle('open');
   arrow.textContent = content.classList.contains('open') ? '▲' : '▼';
 }
