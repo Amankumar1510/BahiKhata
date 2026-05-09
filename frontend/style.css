@@ -827,3 +827,87 @@ tbody tr:hover {
   padding: 32px;
   color: var(--text-muted);
 }
+
+/* ─────────────────────────────────────────
+   RESPONSIVE LAYOUT
+───────────────────────────────────────── */
+
+/* Hamburger Button */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text);
+  padding: 4px;
+}
+
+/* TABLETS & MOBILES (Max Width 768px) */
+@media (max-width: 768px) {
+  #app-screen.visible {
+    grid-template-columns: 1fr; /* Remove sidebar from grid */
+  }
+
+  .hamburger-btn {
+    display: block;
+  }
+
+  /* Sidebar acts as a slide-over menu */
+  #sidebar {
+    position: fixed;
+    top: var(--nav-h);
+    left: -100%;
+    width: var(--sidebar-w);
+    height: calc(100vh - var(--nav-h));
+    z-index: 50;
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  }
+
+  #sidebar.open {
+    left: 0;
+  }
+
+  /* Make tables horizontally scrollable */
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 650px; /* Prevent column squishing */
+  }
+
+  .ledger-filters {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+/* SMALL MOBILES (Max Width 480px) */
+@media (max-width: 480px) {
+  .auth-card, .modal {
+    width: 95vw;
+    padding: 20px 16px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  #top-nav {
+    padding: 0 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .balance-card {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

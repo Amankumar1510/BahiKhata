@@ -251,9 +251,17 @@ async function doLogout() {
 }
 
 // ─────────────────────────────────────────
-// NAVIGATION
+// NAVIGATION & LAYOUT
 // ─────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('open');
+}
+
 function navigateTo(view) {
+  // Close sidebar on mobile after navigation
+  document.getElementById('sidebar').classList.remove('open');
+
   // Update sidebar active state
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const navEl = document.getElementById(`nav-${view}`);
@@ -612,13 +620,11 @@ function applyLedgerFilters() {
   let filtered = state.ledgerTransactions;
 
   if (start) {
-    const startDate = new Date(start + 'T00:00:00');
-    filtered = filtered.filter(t => new Date(t.transaction_date) >= startDate);
+    filtered = filtered.filter(t => t.transaction_date.substring(0, 10) >= start);
   }
 
   if (end) {
-    const endDate = new Date(end + 'T23:59:59');
-    filtered = filtered.filter(t => new Date(t.transaction_date) <= endDate);
+    filtered = filtered.filter(t => t.transaction_date.substring(0, 10) <= end);
   }
 
   renderLedgerTable(filtered);
